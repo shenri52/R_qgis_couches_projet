@@ -23,5 +23,5 @@ Ce script permet de lister les couches utilisées dans les projets QGIS avec l'e
 
 Le fichier contenant la liste des couches se trouve dans le dossier "result" et se nomme "couche_sig".
 
-#### Attention :
+## Attention :
 Si une couche est présente plusieurs fois dans le même projet, elle n'est comptabilisé qu'une fois.
