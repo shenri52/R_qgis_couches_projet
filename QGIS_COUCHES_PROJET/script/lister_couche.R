@@ -1,23 +1,22 @@
 #################### Liste des couches contenues dans les projets QGS
 
-# Récupérer la liste des fichiers QGS décompressés
-list_qgs <- list.files(path = "result/",
-                       full.names = TRUE,
-                       recursive = TRUE) %>%
-                       as.data.frame() %>%
-            rename.variable(".", "Chemin")
-
 # Boucle de listing des projets couches contenues dans les projets QGS
-nb_qgs <- count(list_qgs)
 couche_utilisee <- data.frame()
 
-for (i in 1: nb_qgs$n)
+# Décompression et vérification du contenu
+for (i in 1: nrow(list_qgz))
 {
   # Fichiers QGZ à décompresser
-  projet_qgs <- list_qgs$Chemin[i]
+  zip_fichier <- list_qgz$Chemin[i]
+  
+  # Création d'une liste des fichiers QGS contenu dans les fichiers QGZ à décompresser
+  zip_qgs <- grep('\\.qgs$', unzip(zip_fichier, list=TRUE)$Name, ignore.case=TRUE, value=TRUE)
+  
+  # Décompression des QGS contenu dans les QGZ
+  unzip(zip_fichier, files=zip_qgs, exdir = "result/")
   
   # Récupération de la liste des couche utilisées dans le projet QGS
-  couche_sig <- read_html(projet_qgs) %>%
+  couche_sig <- read_html(paste("result/", zip_qgs, sep ="")) %>%
                 html_nodes("layer-tree-layer") %>%
                 html_attr("source") %>%
                 as.data.frame() %>%
@@ -32,13 +31,14 @@ for (i in 1: nb_qgs$n)
                 mutate(couche = gsub("\\|.*$", "", couche))
 
   # Assemblage des listes de couches utilisées dans les projets
+  
   couche_utilisee <- rbind(couche_utilisee, couche_sig)
   
   # Suppression du fichier QGS traité
-  file.remove(list_qgs$Chemin[i])
+  file.remove(paste("result/", zip_qgs, sep =""))
+  
 }
-
-
+  
 # Regroupement des couches par nom et indication du nombre de fois ou elles apparaissent
 couche_utilisee <- couche_utilisee %>%
                    # Normalisation des noms de chemins : remplacement des \ par des /
@@ -59,7 +59,9 @@ couche_utilisee <- couche_utilisee[order(couche_utilisee$Freq, decreasing = T),]
 
 # Export des données
 write.table(couche_utilisee,
-            file = paste("result/couche_sig.csv"),
+            file = "result/couche_sig.csv",
             fileEncoding = "UTF-8",
             sep =";",
             row.names = FALSE)
+
+remove(list_qgs)
